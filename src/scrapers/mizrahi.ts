@@ -186,6 +186,7 @@ class MizrahiScraper extends BaseScraperWithBrowser<ScraperSpecificCredentials> 
         accounts: results,
       };
     } catch (e) {
+      console.log(e);
       return {
         success: false,
         errorType: ScraperErrorTypes.Generic,
