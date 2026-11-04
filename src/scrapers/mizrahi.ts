@@ -403,9 +403,8 @@ class MizrahiScraper extends BaseScraperWithBrowser<ScraperSpecificCredentials> 
     const relevantRows = response.body.table.rows.filter(row => row.RecTypeSpecified);
     const oshTxn = await convertTransactions(
       relevantRows,
-      this.options.additionalTransactionInformation
-        ? row => getExtraTransactionDetails(this.page, row, apiHeaders)
-        : () => Promise.resolve(EMPTY_MORE_DETAILS),
+      // fork: always fetch details; the production runner passes no options
+      row => getExtraTransactionDetails(this.page, row, apiHeaders),
       this.options.optInFeatures?.includes('mizrahi:pendingIfTodayTransaction'),
       this.options,
     );
