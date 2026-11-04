@@ -9,7 +9,13 @@ import {
 } from '../helpers/elements-interactions';
 import { fetchPostWithinPage } from '../helpers/fetch';
 import { waitForUrl } from '../helpers/navigation';
-import { type Transaction, type TransferDetails, TransactionStatuses, TransactionTypes, type TransactionsAccount } from '../transactions';
+import {
+  type Transaction,
+  type TransferDetails,
+  TransactionStatuses,
+  TransactionTypes,
+  type TransactionsAccount,
+} from '../transactions';
 import { BaseScraperWithBrowser, LoginResults, type PossibleLoginResults } from './base-scraper-with-browser';
 import { ScraperErrorTypes } from './errors';
 import { getDebug } from '../helpers/debug';
