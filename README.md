@@ -104,6 +104,13 @@ The structure of the result object is as follows:
         number: int, // the current installment number
         total: int, // the total number of installments
       },
+      transferDetails: { // only if exists - the other side of a bank transfer. Currently Mizrahi only, requires `additionalTransactionInformation: true`
+        counterpartyName: string, // only if exists
+        bank: string, // only if exists
+        branch: string, // only if exists
+        account: string, // only if exists
+        transferPurpose: string, // only if exists
+      },
       status: string //can either be 'completed' or 'pending'
     }],
   }],

@@ -36,6 +36,19 @@ export interface TransactionInstallments {
   total: number;
 }
 
+/**
+ * Structured details of the other side of a bank transfer.
+ * Currently populated only by the Mizrahi scraper, and only when the
+ * `additionalTransactionInformation` option is enabled.
+ */
+export interface TransferDetails {
+  counterpartyName?: string;
+  bank?: string;
+  branch?: string;
+  account?: string;
+  transferPurpose?: string;
+}
+
 export interface Transaction {
   type: TransactionTypes;
   /**
@@ -59,5 +72,9 @@ export interface Transaction {
   status: TransactionStatuses;
   installments?: TransactionInstallments;
   category?: string;
+  /**
+   * only if exists, see TransferDetails
+   */
+  transferDetails?: TransferDetails;
   rawTransaction?: unknown;
 }

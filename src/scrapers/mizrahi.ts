@@ -9,7 +9,13 @@ import {
 } from '../helpers/elements-interactions';
 import { fetchPostWithinPage } from '../helpers/fetch';
 import { waitForUrl } from '../helpers/navigation';
-import { type Transaction, TransactionStatuses, TransactionTypes, type TransactionsAccount } from '../transactions';
+import {
+  type Transaction,
+  type TransferDetails,
+  TransactionStatuses,
+  TransactionTypes,
+  type TransactionsAccount,
+} from '../transactions';
 import { BaseScraperWithBrowser, LoginResults, type PossibleLoginResults } from './base-scraper-with-browser';
 import { ScraperErrorTypes } from './errors';
 import { getDebug } from '../helpers/debug';
@@ -72,7 +78,33 @@ type MoreDetailsResponse = {
 type MoreDetails = {
   entries: Record<string, string>;
   memo: string | undefined;
+  transferDetails: TransferDetails | undefined;
 };
+
+const EMPTY_MORE_DETAILS: MoreDetails = {
+  entries: {},
+  memo: undefined,
+  transferDetails: undefined,
+};
+
+const TRANSFER_DETAILS_LABELS: Record<keyof TransferDetails, string> = {
+  counterpartyName: 'שם',
+  bank: 'בנק',
+  branch: 'סניף',
+  account: 'חשבון',
+  transferPurpose: 'מהות',
+};
+
+function extractTransferDetails(entries: [string, string][]): TransferDetails | undefined {
+  const transferDetails: TransferDetails = {};
+  for (const [field, labelPrefix] of Object.entries(TRANSFER_DETAILS_LABELS)) {
+    const value = entries.find(([label]) => label.startsWith(labelPrefix))?.[1];
+    if (value) {
+      transferDetails[field as keyof TransferDetails] = value;
+    }
+  }
+  return Object.keys(transferDetails).length > 0 ? transferDetails : undefined;
+}
 
 const BASE_WEBSITE_URL = 'https://www.mizrahi-tefahot.co.il';
 const LOGIN_URL = `${BASE_WEBSITE_URL}/login/index.html#/auth-page-he`;
@@ -162,13 +194,14 @@ async function getExtraTransactionDetails(
       const details = response?.body.fields?.[0]?.[0]?.Records?.[0].Fields;
       debug('fetch details for', params, 'details:', details);
       if (Array.isArray(details) && details.length > 0) {
-        const entries = details.map(record => [record.Label.trim(), record.Value.trim()]);
+        const entries: [string, string][] = details.map(record => [record.Label.trim(), record.Value.trim()]);
         return {
           entries: Object.fromEntries(entries),
           memo: entries
             .filter(([label]) => ['שם', 'מהות', 'חשבון'].some(key => label.startsWith(key)))
             .map(([label, value]) => `${label} ${value}`)
             .join(', '),
+          transferDetails: extractTransferDetails(entries),
         };
       }
     }
@@ -176,10 +209,7 @@ async function getExtraTransactionDetails(
     debug('Error fetching extra transaction details:', error);
   }
 
-  return {
-    entries: {},
-    memo: undefined,
-  };
+  return EMPTY_MORE_DETAILS;
 }
 
 function createDataFromRequest(request: HTTPRequest, optionsStartDate: Date) {
@@ -231,6 +261,7 @@ async function convertTransactions(
         chargedAmount: row.MC02SchumEZ,
         description: row.MC02TnuaTeurEZ,
         memo: moreDetails?.memo,
+        transferDetails: moreDetails?.transferDetails,
         status:
           pendingIfTodayTransaction && row.IsTodayTransaction
             ? TransactionStatuses.Pending
@@ -374,7 +405,7 @@ class MizrahiScraper extends BaseScraperWithBrowser<ScraperSpecificCredentials> 
       relevantRows,
       this.options.additionalTransactionInformation
         ? row => getExtraTransactionDetails(this.page, row, apiHeaders)
-        : () => Promise.resolve({ entries: {}, memo: undefined }),
+        : () => Promise.resolve(EMPTY_MORE_DETAILS),
       this.options.optInFeatures?.includes('mizrahi:pendingIfTodayTransaction'),
       this.options,
     );
